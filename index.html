@@ -121,9 +121,103 @@ nav button:hover {
          <p class="p1"> Учусь к колледже IThub на фронтенд-разработчика</p>
     </div>
     <div class="page" id="page-2">            
-     <h2>Факты о котах </h2>
-     <button onclick="getFact()">Новый факт</button>
-     <p id="result"></p>
+    <!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>API — универсальные колонки</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; max-width: 800px; }
+    th, td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+    th { background: #f5f5f5; }
+    .error { color: #d9534f; }
+    button { padding: 10px 16px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+    button:disabled { background: #ccc; }
+  </style>
+</head>
+<body>
+  <h2>Данные из API</h2>
+  <button id="loadBtn">Загрузить данные</button>
+  <div id="status"></div>
+  <table id="pricesTable" style="display:none;">
+    <thead id="thead"></thead>
+    <tbody id="pricesBody"></tbody>
+  </table>
+
+  <script>
+    const btn = document.getElementById('loadBtn');
+    const status = document.getElementById('status');
+    const table = document.getElementById('pricesTable');
+    const thead = document.getElementById('thead');
+    const tbody = document.getElementById('pricesBody');
+
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      status.textContent = 'Загрузка…';
+      table.style.display = 'none';
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+
+      try {
+        const res = await fetch('https://api.stavmk.ru/website/get-price');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        // Пытаемся найти массив
+        let items = [];
+        if (Array.isArray(data)) items = data;
+        else if (data && Array.isArray(data.items)) items = data.items;
+        else if (data && Array.isArray(data.data)) items = data.data;
+
+        if (!items || items.length === 0) {
+          status.textContent = 'Нет данных для отображения';
+          return;
+        }
+
+        // Берём ключи из первого элемента — это будут наши колонки
+        const keys = Object.keys(items[0]).slice(0, 4); // максимум 4 колонки
+
+        // Рисуем шапку
+        let headerRow = '<tr>';
+        keys.forEach(k => headerRow += `<th>${escapeHtml(k)}</th>`);
+        headerRow += '</tr>';
+        thead.innerHTML = headerRow;
+
+        // Рисуем строки
+        items.forEach(item => {
+          let row = '<tr>';
+          keys.forEach(k => {
+            const val = item[k] !== undefined ? String(item[k]) : '—';
+            row += `<td>${escapeHtml(val)}</td>`;
+          });
+          row += '</tr>';
+          tbody.innerHTML += row;
+        });
+
+        table.style.display = 'table';
+        status.textContent = '';
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Ошибка: ' + err.message;
+        status.className = 'error';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
     </div> 
     <div class="page" id="page-3">
         <img src="https://github.com/kket78143-afk/kket78143-afk.github.io/blob/main/%D0%BB%D0%BE%D0%BB/i.webp?raw=true" title="я владею базовами навыками" />
@@ -132,30 +226,6 @@ nav button:hover {
         <img src="https://github.com/kket78143-afk/kket78143-afk.github.io/blob/main/%D0%BB%D0%BE%D0%BB/jhjh.webp?raw=true"  title="я владею базовами навыками"/>
     </div>
 </main>     
-   <script>
-        // Наше "фейковое API" — просто массив с данными
-        const fakeAPI = {
-            facts: [
-                "Коты спят 16 часов в день",
-                "У кота 32 мышцы в каждом ухе",
-                "Коты не чувствуют сладкий вкус",
-                "Сердце кота бьётся 110-140 ударов в минуту",
-                "Коты мурлыкают на частоте 25-150 Гц"
-            ],
-            getRandomFact: function() {
-                const randomIndex = Math.floor(Math.random() * this.facts.length);
-                return this.facts[randomIndex];
-            }
-        };
-
-        function getFact() {
-            const fact = fakeAPI.getRandomFact();
-            document.getElementById('result').innerHTML = fact;
-        }
-
-        // Показываем первый факт при загрузке
-        getFact();
-    </script>
 <script>
     document.querySelectorAll('button[data-group]').forEach(button => {
         button.onclick = event => {
